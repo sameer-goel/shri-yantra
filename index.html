@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sri Chakram</title>
+  <style>
+    /* ========== RESET ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    /* ========== BODY / THE VOID ========== */
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000;
+      overflow: hidden;
+    }
+
+    /* ========== RAINBOW SWIRL (body::before) ========== */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      z-index: 0;
+      background: conic-gradient(
+        from 0deg at var(--swirl-x, 50%) var(--swirl-y, 50%),
+        #ff0000, #ff8800, #ffff00, #88ff00,
+        #00ff00, #00ff88, #00ffff, #0088ff,
+        #0000ff, #8800ff, #ff00ff, #ff0088,
+        #ff0000
+      );
+      animation: voidColorSpin var(--swirl-speed, 8s) linear infinite;
+      pointer-events: none;
+    }
+
+    /* ========== DARK OVERLAY (body::after) ========== */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(0,0,0,0.3) 0%,
+        rgba(0,0,0,0.7) 60%,
+        rgba(0,0,0,0.85) 100%
+      );
+      pointer-events: none;
+    }
+
+    @keyframes voidColorSpin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* ========== SCENE CONTAINER ========== */
+    .scene {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1;
+    }
+    
+    /* ========== HERO (SRI CHAKRAM) ========== */
+    .hero-container {
+      position: relative;
+      z-index: 10;
+    }
+    
+    .hero-icon {
+      width: 100vmin;
+      height: 100vmin;
+      object-fit: contain;
+      display: block;
+      cursor: pointer;
+      transform-origin: var(--zoom-origin-x, 50%) var(--zoom-origin-y, 50%);
+      animation: journeyToBindu var(--zoom-speed, 20s) ease-in-out infinite;
+      animation-direction: var(--zoom-direction, normal);
+      animation-play-state: paused;
+    }
+
+    .start-prompt {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      color: rgba(255,200,100,0.7);
+      font-family: Georgia, serif;
+      font-size: 16px;
+      letter-spacing: 2px;
+      animation: promptPulse 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes promptPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes journeyToBindu {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      45% {
+        transform: scale(var(--zoom-depth-mid, 25));
+        opacity: 1;
+      }
+      50% {
+        transform: scale(var(--zoom-depth-max, 40));
+        opacity: 1;
+      }
+      55% {
+        transform: scale(var(--zoom-depth-mid, 25));
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="hero-container">
+      <img src="srichakram.png" alt="Sri Chakram" class="hero-icon">
+    </div>
+  </div>
+  <div class="start-prompt" id="startPrompt">🕉 click anywhere to begin</div>
+
+  <script>
+    let audioCtx, started = false;
+
+    function createBowlStrike() {
+      const now = audioCtx.currentTime;
+
+      const osc1 = audioCtx.createOscillator();
+      osc1.type = 'sine';
+      osc1.frequency.value = 2093;
+
+      const osc2 = audioCtx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = 2098;
+
+      const osc3 = audioCtx.createOscillator();
+      osc3.type = 'sine';
+      osc3.frequency.value = 5580;
+
+      const osc4 = audioCtx.createOscillator();
+      osc4.type = 'sine';
+      osc4.frequency.value = 1047;
+
+      const env1 = audioCtx.createGain();
+      env1.gain.setValueAtTime(0, now);
+      env1.gain.linearRampToValueAtTime(0.07, now + 0.003);
+      env1.gain.exponentialRampToValueAtTime(0.001, now + 6);
+
+      const env2 = audioCtx.createGain();
+      env2.gain.setValueAtTime(0, now);
+      env2.gain.linearRampToValueAtTime(0.07, now + 0.003);
+      env2.gain.exponentialRampToValueAtTime(0.001, now + 6);
+
+      const env3 = audioCtx.createGain();
+      env3.gain.setValueAtTime(0, now);
+      env3.gain.linearRampToValueAtTime(0.015, now + 0.002);
+      env3.gain.exponentialRampToValueAtTime(0.001, now + 2);
+
+      const env4 = audioCtx.createGain();
+      env4.gain.setValueAtTime(0, now);
+      env4.gain.linearRampToValueAtTime(0.03, now + 0.005);
+      env4.gain.exponentialRampToValueAtTime(0.001, now + 4);
+
+      osc1.connect(env1).connect(audioCtx.destination);
+      osc2.connect(env2).connect(audioCtx.destination);
+      osc3.connect(env3).connect(audioCtx.destination);
+      osc4.connect(env4).connect(audioCtx.destination);
+
+      osc1.start(now); osc2.start(now); osc3.start(now); osc4.start(now);
+      osc1.stop(now + 6.5); osc2.stop(now + 6.5); osc3.stop(now + 2.5); osc4.stop(now + 4.5);
+    }
+
+    function beginExperience() {
+      if (started) return;
+      started = true;
+      document.getElementById('startPrompt').style.display = 'none';
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      createBowlStrike();
+      icon.style.animationPlayState = 'running';
+    }
+
+    document.addEventListener('click', beginExperience, { once: true });
+    document.addEventListener('touchstart', beginExperience, { once: true });
+
+    const icon = document.querySelector('.hero-icon');
+    icon.addEventListener('click', function(e) {
+      if (!started) return;
+      e.stopPropagation();
+      const paused = this.style.animationPlayState === 'paused';
+      this.style.animationPlayState = paused ? 'running' : 'paused';
+      if (paused) {
+        audioCtx.resume();
+      } else {
+        audioCtx.suspend();
+      }
+    });
+  </script>
+</body>
+</html>
