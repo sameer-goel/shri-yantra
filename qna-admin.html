@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Q&amp;A Admin - Sri Yantra</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060606; --bg-card: #111010; --bg-elev: #171514;
+      --gold: #c9a96e; --gold-light: #e0c894; --gold-glow: rgba(201,169,110,0.10);
+      --text: #f8f5f0; --text-secondary: #bdb6ab; --text-muted: #7e7468;
+      --line: rgba(255,255,255,0.07);
+      --ok: #6bbf8a; --err: #e08a7a; --warn: #d9b45b;
+      --radius: 12px; --radius-sm: 8px;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* The hidden attribute must win over any display rule below. */
+    [hidden] { display: none !important; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--font-body); line-height: 1.65; padding: 28px 20px 70px;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; }
+
+    h1 { font-family: var(--font-display); font-weight: 500; font-size: 34px; margin-bottom: 4px; }
+    .sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
+
+    /* --- login gate --- */
+    #gate { max-width: 400px; margin: 60px auto; }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 26px;
+    }
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 7px; }
+    input[type=password], input[type=text], textarea, select {
+      width: 100%; padding: 12px 14px; background: var(--bg-elev); color: var(--text);
+      border: 1px solid var(--line); border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 15px;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+    textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+    button {
+      font-family: var(--font-body); font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; border-radius: var(--radius-sm);
+      padding: 11px 18px; transition: background .2s, opacity .2s;
+    }
+    .btn-gold { background: var(--gold); color: #16120c; }
+    .btn-gold:hover:not(:disabled) { background: var(--gold-light); }
+    .btn-ghost {
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--line);
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-danger { background: transparent; color: var(--err); border: 1px solid rgba(224,138,122,0.35); }
+    .btn-danger:hover { background: rgba(224,138,122,0.10); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .full { width: 100%; margin-top: 16px; }
+
+    /* --- toolbar --- */
+    .bar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line);
+    }
+    .tab {
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--line); padding: 8px 15px; font-weight: 500;
+      border-radius: 999px; font-size: 13px;
+    }
+    .tab.on { background: var(--gold-glow); border-color: var(--gold); color: var(--gold-light); }
+    .tab .n { opacity: 0.7; font-variant-numeric: tabular-nums; }
+    .spacer { flex: 1; }
+
+    /* --- items --- */
+    .item {
+      background: var(--bg-card); border: 1px solid var(--line);
+      border-left: 2px solid var(--warn);
+      border-radius: var(--radius); padding: 22px 24px; margin-bottom: 16px;
+    }
+    .item[data-status=published] { border-left-color: var(--ok); }
+    .item[data-status=hidden] { border-left-color: var(--text-muted); opacity: 0.72; }
+
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline;
+      font-size: 13px; color: var(--text-muted); margin-bottom: 12px;
+    }
+    .who { color: var(--text); font-weight: 600; font-size: 15px; }
+    .pill {
+      font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 999px; font-weight: 600;
+    }
+    .pill.pending { background: rgba(217,180,91,0.14); color: var(--warn); }
+    .pill.published { background: rgba(107,191,138,0.14); color: var(--ok); }
+    .pill.hidden { background: rgba(255,255,255,0.07); color: var(--text-muted); }
+    .mail a { color: var(--gold); text-decoration: none; }
+    .mail a:hover { text-decoration: underline; }
+    .stars-ro { color: var(--gold); letter-spacing: 1px; }
+
+    .q {
+      font-family: var(--font-display); font-size: 19px; line-height: 1.45;
+      margin-bottom: 14px; white-space: pre-wrap;
+    }
+    .answer-label { font-size: 12px; color: var(--gold); margin-bottom: 6px; font-weight: 500; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+
+    .note { font-size: 13px; margin-top: 10px; display: none; }
+    .note.show { display: block; }
+    .note.ok { color: var(--ok); }
+    .note.err { color: var(--err); }
+
+    .empty {
+      text-align: center; color: var(--text-muted); padding: 50px 20px;
+      border: 1px dashed var(--line); border-radius: var(--radius);
+    }
+    .top-note { font-size: 13px; margin-bottom: 14px; }
+    .top-note.err { color: var(--err); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- login -->
+    <div id="gate">
+      <div class="card">
+        <h1 style="font-size:26px">Q&amp;A Admin</h1>
+        <p class="sub">Sri Yantra reader questions.</p>
+        <label for="pw">Admin password</label>
+        <input type="password" id="pw" autocomplete="current-password">
+        <button class="btn-gold full" id="loginBtn">Unlock</button>
+        <p class="note err" id="loginNote"></p>
+      </div>
+    </div>
+
+    <!-- console -->
+    <div id="app" hidden>
+      <h1>Reader Questions</h1>
+      <p class="sub">Answer a question to publish it. Nothing is visible to readers until you publish.</p>
+
+      <div class="bar">
+        <button class="tab on" data-status="pending">Pending <span class="n" id="n-pending"></span></button>
+        <button class="tab" data-status="published">Published <span class="n" id="n-published"></span></button>
+        <button class="tab" data-status="hidden">Hidden <span class="n" id="n-hidden"></span></button>
+        <button class="tab" data-status="all">All</button>
+        <span class="spacer"></span>
+        <button class="btn-ghost" id="refreshBtn">Refresh</button>
+        <button class="btn-ghost" id="logoutBtn">Lock</button>
+      </div>
+
+      <p class="top-note err" id="topNote"></p>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var API = 'https://sriyantra-qna.sameergoel-portfolio-api.workers.dev';
+    var KEY = 'sriyantra_qna_pw';
+
+    var gate = document.getElementById('gate');
+    var app = document.getElementById('app');
+    var pw = document.getElementById('pw');
+    var loginBtn = document.getElementById('loginBtn');
+    var loginNote = document.getElementById('loginNote');
+    var list = document.getElementById('list');
+    var topNote = document.getElementById('topNote');
+
+    // sessionStorage, not localStorage: closing the tab drops the password.
+    var token = sessionStorage.getItem(KEY) || '';
+    var status = 'pending';
+
+    function auth() { return { 'Authorization': 'Bearer ' + token }; }
+
+    function el(tag, cls, text) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    }
+
+    function fmt(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      return isNaN(d.getTime()) ? '' : d.toLocaleString('en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // --- login ---
+    function tryLogin(candidate) {
+      loginNote.className = 'note err';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Checking...';
+      return fetch(API + '/api/admin/questions?status=pending&limit=1', {
+        headers: { 'Authorization': 'Bearer ' + candidate }
+      })
+        .then(function (res) {
+          if (res.status === 401) throw new Error('Wrong password.');
+          if (!res.ok) throw new Error('Server error ' + res.status + '.');
+          token = candidate;
+          sessionStorage.setItem(KEY, candidate);
+          gate.hidden = true;
+          app.hidden = false;
+          return load();
+        })
+        .catch(function (err) {
+          loginNote.textContent = err.message || 'Could not sign in.';
+          loginNote.classList.add('show');
+          sessionStorage.removeItem(KEY);
+        })
+        .then(function () {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Unlock';
+        });
+    }
+
+    loginBtn.addEventListener('click', function () {
+      if (pw.value) tryLogin(pw.value);
+    });
+    pw.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && pw.value) tryLogin(pw.value);
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', function () {
+      sessionStorage.removeItem(KEY);
+      token = '';
+      app.hidden = true;
+      gate.hidden = false;
+      pw.value = '';
+    });
+    document.getElementById('refreshBtn').addEventListener('click', function () { load(); });
+
+    [].slice.call(document.querySelectorAll('.tab')).forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('on'); });
+        t.classList.add('on');
+        status = t.dataset.status;
+        load();
+      });
+    });
+
+    // --- render one item ---
+    function itemCard(it) {
+      var card = el('article', 'item');
+      card.dataset.status = it.status;
+
+      var meta = el('div', 'meta');
+      meta.appendChild(el('span', 'who', it.name));
+      meta.appendChild(el('span', 'pill ' + it.status, it.status));
+      if (it.kind === 'review') meta.appendChild(el('span', 'pill hidden', 'review'));
+      if (it.rating) {
+        var r = Math.max(1, Math.min(5, Number(it.rating) || 0));
+        meta.appendChild(el('span', 'stars-ro', '★'.repeat(r)));
+      }
+      meta.appendChild(el('span', null, fmt(it.created_at)));
+      if (it.email) {
+        var m = el('span', 'mail');
+        var a = el('a', null, it.email);
+        a.href = 'mailto:' + encodeURIComponent(it.email) +
+          '?subject=' + encodeURIComponent('Re: your Sri Yantra question');
+        m.appendChild(a);
+        meta.appendChild(m);
+      }
+      card.appendChild(meta);
+
+      card.appendChild(el('p', 'q', it.question));
+
+      card.appendChild(el('p', 'answer-label', 'Your answer'));
+      var ta = document.createElement('textarea');
+      ta.value = it.answer || '';
+      ta.placeholder = 'Write the answer readers will see...';
+      ta.maxLength = 8000;
+      card.appendChild(ta);
+
+      var note = el('p', 'note');
+      var actions = el('div', 'actions');
+
+      function say(kind, text) {
+        note.className = 'note show ' + kind;
+        note.textContent = text;
+      }
+
+      function post(path, body, okText, method) {
+        var buttons = actions.querySelectorAll('button');
+        buttons.forEach(function (b) { b.disabled = true; });
+        return fetch(API + path, {
+          method: method || 'POST',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, auth()),
+          body: JSON.stringify(body)
+        })
+          .then(function (res) {
+            return res.json().then(function (d) { return { ok: res.ok, d: d }; });
+          })
+          .then(function (r) {
+            if (r.ok && r.d.ok) {
+              say('ok', okText);
+              setTimeout(load, 600);
+            } else {
+              say('err', (r.d && r.d.error) || 'Failed.');
+              buttons.forEach(function (b) { b.disabled = false; });
+            }
+          })
+          .catch(function () {
+            say('err', 'Network problem.');
+            buttons.forEach(function (b) { b.disabled = false; });
+          });
+      }
+
+      var pubBtn = el('button', 'btn-gold', 'Save and publish');
+      pubBtn.addEventListener('click', function () {
+        if (!ta.value.trim()) { say('err', 'Write an answer first.'); return; }
+        post('/api/admin/answer', { id: it.id, answer: ta.value, status: 'published' }, 'Published.');
+      });
+      actions.appendChild(pubBtn);
+
+      var draftBtn = el('button', 'btn-ghost', 'Save as draft');
+      draftBtn.addEventListener('click', function () {
+        if (!ta.value.trim()) { say('err', 'Nothing to save.'); return; }
+        post('/api/admin/answer', { id: it.id, answer: ta.value, status: 'pending' }, 'Saved, still hidden.');
+      });
+      actions.appendChild(draftBtn);
+
+      if (it.status === 'published') {
+        var unpub = el('button', 'btn-ghost', 'Unpublish');
+        unpub.addEventListener('click', function () {
+          post('/api/admin/status', { id: it.id, status: 'hidden' }, 'Hidden from readers.');
+        });
+        actions.appendChild(unpub);
+      }
+
+      if (it.status !== 'hidden') {
+        var hide = el('button', 'btn-ghost', 'Hide');
+        hide.addEventListener('click', function () {
+          post('/api/admin/status', { id: it.id, status: 'hidden' }, 'Hidden.');
+        });
+        actions.appendChild(hide);
+      } else {
+        var unhide = el('button', 'btn-ghost', 'Move to pending');
+        unhide.addEventListener('click', function () {
+          post('/api/admin/status', { id: it.id, status: 'pending' }, 'Back to pending.');
+        });
+        actions.appendChild(unhide);
+      }
+
+      var del = el('button', 'btn-danger', 'Delete');
+      del.addEventListener('click', function () {
+        if (!window.confirm('Permanently delete this question from ' + it.name + '? This cannot be undone.')) return;
+        post('/api/admin/question', { id: it.id }, 'Deleted.', 'DELETE');
+      });
+      actions.appendChild(del);
+
+      card.appendChild(actions);
+      card.appendChild(note);
+      return card;
+    }
+
+    // --- load list ---
+    function load() {
+      topNote.classList.remove('show');
+      topNote.textContent = '';
+      return fetch(API + '/api/admin/questions?status=' + encodeURIComponent(status) + '&limit=200', {
+        headers: auth()
+      })
+        .then(function (res) {
+          if (res.status === 401) {
+            sessionStorage.removeItem(KEY);
+            app.hidden = true;
+            gate.hidden = false;
+            throw new Error('Session expired. Please unlock again.');
+          }
+          return res.json();
+        })
+        .then(function (data) {
+          var counts = data.counts || {};
+          document.getElementById('n-pending').textContent = counts.pending || 0;
+          document.getElementById('n-published').textContent = counts.published || 0;
+          document.getElementById('n-hidden').textContent = counts.hidden || 0;
+
+          list.textContent = '';
+          var items = data.items || [];
+          if (!items.length) {
+            list.appendChild(el('div', 'empty', 'Nothing here.'));
+            return;
+          }
+          items.forEach(function (it) { list.appendChild(itemCard(it)); });
+        })
+        .catch(function (err) {
+          if (err && err.message) {
+            topNote.textContent = err.message;
+            topNote.classList.add('show');
+          }
+        });
+    }
+
+    // Resume an unlocked session on reload.
+    if (token) {
+      gate.hidden = true;
+      app.hidden = false;
+      load();
+    }
+  })();
+  </script>
+</body>
+</html>

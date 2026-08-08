@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sri Chakram</title>
+  <meta name="description" content="An immersive Sri Chakram meditation. Journey to the bindu, and ask your questions about the Sri Yantra Guidebook.">
   <style>
     /* ========== RESET ========== */
     * {
@@ -134,6 +135,31 @@
         opacity: 1;
       }
     }
+
+    .qna-link {
+      position: fixed;
+      top: 22px;
+      right: 24px;
+      z-index: 200;
+      color: rgba(255,200,100,0.65);
+      font-family: Georgia, serif;
+      font-size: 14px;
+      letter-spacing: 1px;
+      text-decoration: none;
+      padding: 8px 15px;
+      border: 1px solid rgba(255,200,100,0.28);
+      border-radius: 999px;
+      background: rgba(0,0,0,0.35);
+      transition: color .3s, border-color .3s, background .3s;
+    }
+    .qna-link:hover {
+      color: rgba(255,215,140,1);
+      border-color: rgba(255,200,100,0.6);
+      background: rgba(0,0,0,0.6);
+    }
+    @media (max-width: 560px) {
+      .qna-link { top: 16px; right: 16px; font-size: 13px; padding: 7px 13px; }
+    }
   </style>
 </head>
 <body>
@@ -142,6 +168,7 @@
       <img src="srichakram.png" alt="Sri Chakram" class="hero-icon">
     </div>
   </div>
+  <a class="qna-link" href="qna.html">Reader Questions</a>
   <div class="start-prompt" id="startPrompt">🕉 click anywhere to begin</div>
 
   <script>
@@ -203,6 +230,11 @@
       createBowlStrike();
       icon.style.animationPlayState = 'running';
     }
+
+    // The Q&A link navigates away, so it must not also start the audio.
+    document.querySelector('.qna-link').addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
 
     document.addEventListener('click', beginExperience, { once: true });
     document.addEventListener('touchstart', beginExperience, { once: true });
