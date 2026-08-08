@@ -96,6 +96,7 @@
       letter-spacing: 0.02em;
     }
     .opt { color: var(--text-muted); font-weight: 400; }
+    .req { color: var(--gold); }
     input[type=text], input[type=email], textarea, select {
       width: 100%; padding: 13px 15px;
       background: var(--bg-elev); color: var(--text);
@@ -154,6 +155,9 @@
     .msg.show { display: block; }
     .msg.ok  { background: rgba(107,191,138,0.10); border: 1px solid rgba(107,191,138,0.32); color: var(--ok); }
     .msg.err { background: rgba(224,138,122,0.10); border: 1px solid rgba(224,138,122,0.32); color: var(--err); }
+    .msg strong { display: block; margin-bottom: 4px; font-size: 15px; }
+
+    .privacy { font-size: 12px; color: var(--text-muted); margin-top: 14px; text-align: center; }
 
     /* --- answered list --- */
     .qa {
@@ -221,23 +225,26 @@
       <h1>Reader <em>Questions</em></h1>
       <p class="lede">Ask anything about the Sri Yantra, its geometry, or your own practice.
         Answered questions are shared here so every reader learns from them.</p>
-      <a class="back" href="./">&#8592; Back to the yantra</a>
+      <a class="back" href="./">&#8592; Back to the book</a>
     </header>
 
     <section>
       <h2 class="section-title">Ask a question</h2>
-      <p class="section-note">Your email stays private and is never shown on this page.</p>
+      <p class="section-note">Your email stays private and is never shown on this page.
+        We send one link there so you can confirm your message.</p>
 
       <div class="card">
         <form id="qform" novalidate>
           <div class="row">
             <div class="field">
-              <label for="name">Your name</label>
+              <label for="name">Your name <span class="req" aria-hidden="true">*</span></label>
               <input type="text" id="name" name="name" maxlength="80" autocomplete="name" required>
             </div>
             <div class="field">
-              <label for="email">Email <span class="opt">(optional, private)</span></label>
-              <input type="email" id="email" name="email" maxlength="254" autocomplete="email">
+              <label for="email">Your email <span class="req" aria-hidden="true">*</span></label>
+              <input type="email" id="email" name="email" maxlength="254" autocomplete="email" required
+                inputmode="email" placeholder="you@example.com">
+              <p class="hint">We send one link here to confirm it is really you.</p>
             </div>
           </div>
 
@@ -277,6 +284,8 @@
           </div>
 
           <button type="submit" class="submit" id="submitBtn">Send question</button>
+          <p class="privacy">Your email is used to confirm your message and to reply to you.
+            It is never published, never shown to other readers, and never shared.</p>
           <div class="msg" id="msg" role="status" aria-live="polite"></div>
         </form>
       </div>
@@ -337,9 +346,15 @@
     });
     clearStars.addEventListener('click', function () { rating = 0; paintStars(); });
 
-    function show(kind, text) {
+    function show(kind, node) {
       msg.className = 'msg show ' + kind;
-      msg.textContent = text;
+      msg.textContent = '';
+      msg.appendChild(node);
+    }
+    function line(text, strong) {
+      var n = document.createElement(strong ? 'strong' : 'span');
+      n.textContent = text;
+      return n;
     }
 
     // --- submit ---
@@ -351,8 +366,13 @@
       var email = document.getElementById('email').value.trim();
       var question = qta.value.trim();
 
-      if (!name) { show('err', 'Please add your name.'); return; }
-      if (question.length < 10) { show('err', 'Please write at least 10 characters.'); return; }
+      if (!name) { show('err', line('Please add your name.')); return; }
+      // Email is required: it is where the confirmation link goes.
+      if (!email || email.indexOf('@') < 1 || email.indexOf('.', email.indexOf('@')) < 0) {
+        show('err', line('Please add a valid email address so you can confirm your question.'));
+        return;
+      }
+      if (question.length < 10) { show('err', line('Please write at least 10 characters.')); return; }
 
       btn.disabled = true;
       btn.textContent = 'Sending...';
@@ -377,17 +397,21 @@
         })
         .then(function (r) {
           if (r.ok && r.data.ok) {
-            show('ok', r.data.message || 'Thank you. Your question has been received.');
+            var box = document.createDocumentFragment();
+            box.appendChild(line('Check your inbox', true));
+            box.appendChild(line(r.data.message ||
+              ('We sent a link to ' + email + '. Click it and your question goes to Suhana.')));
+            show('ok', box);
             form.reset();
             rating = 0; paintStars();
             count.textContent = '0';
             loadedAt = Date.now();
           } else {
-            show('err', (r.data && r.data.error) || 'Could not send that. Please try again.');
+            show('err', line((r.data && r.data.error) || 'Could not send that. Please try again.'));
           }
         })
         .catch(function () {
-          show('err', 'Network problem. Please check your connection and try again.');
+          show('err', line('Network problem. Please check your connection and try again.'));
         })
         .then(function () {
           btn.disabled = false;

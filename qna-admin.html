@@ -85,6 +85,7 @@
     }
     .item[data-status=published] { border-left-color: var(--ok); }
     .item[data-status=hidden] { border-left-color: var(--text-muted); opacity: 0.72; }
+    .item[data-status=unverified] { border-left-color: var(--err); opacity: 0.85; }
 
     .meta {
       display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline;
@@ -98,6 +99,7 @@
     .pill.pending { background: rgba(217,180,91,0.14); color: var(--warn); }
     .pill.published { background: rgba(107,191,138,0.14); color: var(--ok); }
     .pill.hidden { background: rgba(255,255,255,0.07); color: var(--text-muted); }
+    .pill.unverified { background: rgba(224,138,122,0.14); color: var(--err); }
     .mail a { color: var(--gold); text-decoration: none; }
     .mail a:hover { text-decoration: underline; }
     .stars-ro { color: var(--gold); letter-spacing: 1px; }
@@ -139,10 +141,12 @@
     <!-- console -->
     <div id="app" hidden>
       <h1>Reader Questions</h1>
-      <p class="sub">Answer a question to publish it. Nothing is visible to readers until you publish.</p>
+      <p class="sub">Readers confirm their email first, then their message lands in Pending.
+        Answer a question to publish it. Nothing is visible to readers until you publish.</p>
 
       <div class="bar">
         <button class="tab on" data-status="pending">Pending <span class="n" id="n-pending"></span></button>
+        <button class="tab" data-status="unverified">Unconfirmed <span class="n" id="n-unverified"></span></button>
         <button class="tab" data-status="published">Published <span class="n" id="n-published"></span></button>
         <button class="tab" data-status="hidden">Hidden <span class="n" id="n-hidden"></span></button>
         <button class="tab" data-status="all">All</button>
@@ -259,6 +263,7 @@
         meta.appendChild(el('span', 'stars-ro', '★'.repeat(r)));
       }
       meta.appendChild(el('span', null, fmt(it.created_at)));
+      if (it.verified_at) meta.appendChild(el('span', null, 'confirmed ' + fmt(it.verified_at)));
       if (it.email) {
         var m = el('span', 'mail');
         var a = el('a', null, it.email);
@@ -271,12 +276,24 @@
 
       card.appendChild(el('p', 'q', it.question));
 
-      card.appendChild(el('p', 'answer-label', 'Your answer'));
-      var ta = document.createElement('textarea');
-      ta.value = it.answer || '';
-      ta.placeholder = 'Write the answer readers will see...';
-      ta.maxLength = 8000;
-      card.appendChild(ta);
+      // Unverified rows have not confirmed their email, so the worker refuses to
+      // publish them. Show the reason instead of an answer box that cannot work.
+      var unverified = it.status === 'unverified';
+      var ta = null;
+
+      if (unverified) {
+        card.appendChild(el('p', 'answer-label', 'Waiting on the reader'));
+        card.appendChild(el('p', null,
+          'This reader has not clicked the confirmation link in their email yet, so this ' +
+          'message cannot be published or answered. Links expire after 72 hours.'));
+      } else {
+        card.appendChild(el('p', 'answer-label', 'Your answer'));
+        ta = document.createElement('textarea');
+        ta.value = it.answer || '';
+        ta.placeholder = 'Write the answer readers will see...';
+        ta.maxLength = 8000;
+        card.appendChild(ta);
+      }
 
       var note = el('p', 'note');
       var actions = el('div', 'actions');
@@ -312,19 +329,21 @@
           });
       }
 
-      var pubBtn = el('button', 'btn-gold', 'Save and publish');
-      pubBtn.addEventListener('click', function () {
-        if (!ta.value.trim()) { say('err', 'Write an answer first.'); return; }
-        post('/api/admin/answer', { id: it.id, answer: ta.value, status: 'published' }, 'Published.');
-      });
-      actions.appendChild(pubBtn);
+      if (!unverified) {
+        var pubBtn = el('button', 'btn-gold', 'Save and publish');
+        pubBtn.addEventListener('click', function () {
+          if (!ta.value.trim()) { say('err', 'Write an answer first.'); return; }
+          post('/api/admin/answer', { id: it.id, answer: ta.value, status: 'published' }, 'Published.');
+        });
+        actions.appendChild(pubBtn);
 
-      var draftBtn = el('button', 'btn-ghost', 'Save as draft');
-      draftBtn.addEventListener('click', function () {
-        if (!ta.value.trim()) { say('err', 'Nothing to save.'); return; }
-        post('/api/admin/answer', { id: it.id, answer: ta.value, status: 'pending' }, 'Saved, still hidden.');
-      });
-      actions.appendChild(draftBtn);
+        var draftBtn = el('button', 'btn-ghost', 'Save as draft');
+        draftBtn.addEventListener('click', function () {
+          if (!ta.value.trim()) { say('err', 'Nothing to save.'); return; }
+          post('/api/admin/answer', { id: it.id, answer: ta.value, status: 'pending' }, 'Saved, still hidden.');
+        });
+        actions.appendChild(draftBtn);
+      }
 
       if (it.status === 'published') {
         var unpub = el('button', 'btn-ghost', 'Unpublish');
@@ -379,6 +398,7 @@
         .then(function (data) {
           var counts = data.counts || {};
           document.getElementById('n-pending').textContent = counts.pending || 0;
+          document.getElementById('n-unverified').textContent = counts.unverified || 0;
           document.getElementById('n-published').textContent = counts.published || 0;
           document.getElementById('n-hidden').textContent = counts.hidden || 0;
 

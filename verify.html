@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirming your message - Sri Yantra Guidebook</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060606; --bg-card: #111010;
+      --gold: #c9a96e; --gold-light: #e0c894; --gold-glow: rgba(201,169,110,0.10);
+      --text: #f8f5f0; --text-secondary: #bdb6ab; --text-muted: #7e7468;
+      --line: rgba(255,255,255,0.07);
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--font-body);
+      line-height: 1.7; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center; padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201,169,110,0.14), transparent 70%);
+    }
+    .box {
+      position: relative; z-index: 1; text-align: center; max-width: 520px; width: 100%;
+      background: var(--bg-card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 46px 34px;
+    }
+    .mark { font-size: 44px; line-height: 1; display: block; margin-bottom: 18px; color: var(--gold); }
+    h1 {
+      font-family: var(--font-display); font-weight: 500; font-size: 32px;
+      line-height: 1.2; margin-bottom: 14px;
+    }
+    p { color: var(--text-secondary); font-size: 16px; }
+    p + p { margin-top: 12px; }
+    .small { font-size: 13px; color: var(--text-muted); margin-top: 20px; }
+    .actions { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; }
+    .btn {
+      display: block; padding: 14px 22px; border-radius: 9px; text-decoration: none;
+      font-size: 15px; font-weight: 600; transition: background .25s, transform .18s;
+    }
+    .btn--gold { background: var(--gold); color: #16120c; }
+    .btn--gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .btn--ghost {
+      background: transparent; color: var(--gold);
+      border: 1px solid rgba(201,169,110,0.38); font-weight: 500;
+    }
+    .btn--ghost:hover { background: var(--gold-glow); }
+    .err h1 { color: var(--text); }
+    .err .mark { color: #e08a7a; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="box" id="box">
+    <span class="mark" id="mark" aria-hidden="true">&#2384;</span>
+    <h1 id="title">Confirming your message...</h1>
+    <p id="body">One moment.</p>
+    <div class="actions" id="actions" hidden>
+      <a class="btn btn--gold" href="./">Back to the book</a>
+      <a class="btn btn--ghost" href="./qna.html">Read other readers' questions</a>
+    </div>
+    <p class="small" id="small" hidden></p>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var API = 'https://sriyantra-qna.sameergoel-portfolio-api.workers.dev';
+
+    var box = document.getElementById('box');
+    var mark = document.getElementById('mark');
+    var title = document.getElementById('title');
+    var body = document.getElementById('body');
+    var actions = document.getElementById('actions');
+    var small = document.getElementById('small');
+
+    function render(state) {
+      if (state.error) box.className = 'box err';
+      mark.innerHTML = state.mark;
+      title.textContent = state.title;
+      body.textContent = state.body;
+      actions.hidden = false;
+      if (state.small) {
+        small.textContent = state.small;
+        small.hidden = false;
+      }
+    }
+
+    var token = new URLSearchParams(window.location.search).get('token');
+
+    if (!token) {
+      render({
+        error: true, mark: '&#8853;',
+        title: 'That link looks incomplete',
+        body: 'The confirmation link is missing its code. Open the link from your email again, or send your message once more.'
+      });
+      return;
+    }
+
+    fetch(API + '/api/verify?token=' + encodeURIComponent(token))
+      .then(function (res) {
+        return res.json().then(function (data) { return { status: res.status, data: data }; });
+      })
+      .then(function (r) {
+        var d = r.data || {};
+
+        if (r.status === 200 && d.ok && d.already) {
+          render({
+            mark: '&#10003;',
+            title: 'Already confirmed',
+            body: 'Thank you. This message was confirmed earlier and is already with Suhana.'
+          });
+          return;
+        }
+
+        if (r.status === 200 && d.ok) {
+          render({
+            mark: '&#10003;',
+            title: 'Confirmed, thank you',
+            body: 'Your message is on its way to Suhana. She reads every one and will reply to the email you gave.',
+            small: 'If you sent a question, her answer may also be shared on this site so other readers can learn from it.'
+          });
+          return;
+        }
+
+        if (r.status === 410) {
+          render({
+            error: true, mark: '&#9203;',
+            title: 'This link has expired',
+            body: 'Confirmation links last 72 hours. Please send your message again and confirm from the new email.'
+          });
+          return;
+        }
+
+        render({
+          error: true, mark: '&#8853;',
+          title: 'We could not confirm that link',
+          body: d.error || 'The link may have already been used, or it was copied incompletely. Please send your message again.'
+        });
+      })
+      .catch(function () {
+        render({
+          error: true, mark: '&#8853;',
+          title: 'Network problem',
+          body: 'We could not reach the server. Check your connection and open the link from your email again.'
+        });
+      });
+  })();
+  </script>
+</body>
+</html>
