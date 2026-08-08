@@ -76,7 +76,9 @@
       gap: 54px; align-items: center;
     }
     .cover img {
-      width: 100%; display: block; border-radius: var(--radius);
+      /* height:auto is required, otherwise the height attribute below wins and
+         the cover renders at its full 1600px. */
+      width: 100%; height: auto; display: block; border-radius: var(--radius);
       box-shadow: 0 22px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(201,169,110,0.2);
     }
     .eyebrow {
